@@ -1,0 +1,54 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: clinical
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: aact
+    spec:
+      containers:
+        - name: aact
+          image: %%image_name%%
+          env:
+          - name: POSTGRES_DB
+            value: aact
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: aact-secret
+                key: username
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: aact-secret
+                key: password
+          - name: READONLY_USER
+            valueFrom:
+              secretKeyRef:
+                name: ro-secret
+                key: username
+          - name: READONLY_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: ro-secret
+                key: password
+      imagePullSecrets:
+        - name: %%image_pull_secret%%
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aact-service
+  labels:
+    app: psql
+spec:
+  selector:
+    app: aact
+  type: NodePort
+  ports:
+   - protocol: TCP
+     port: 5432
+     nodePort: 30432

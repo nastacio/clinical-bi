@@ -29,18 +29,12 @@ services:
     environment:
       POSTGRES_DB: aact
       POSTGRES_USER: aact_user
-      POSTGRES_PASSWORD: example
-    deploy:
-      resources:
-        limits:
-          cpus: '4'
-          memory: 6G
-        reservations:
-          cpus: '2'
-          memory: 4G
+      POSTGRES_PASSWORD: aact_password
+      READONLY_USER: readonly
+      READONLY_PASSWORD: readonly
 
-#  adminer:
-#    image: adminer
-#    restart: always
-#    ports:
-#      - 8080:8080
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080

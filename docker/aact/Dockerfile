@@ -21,13 +21,21 @@ ARG aact_version=20180201
 ARG aact_filename=${aact_version}_clinical_trials.zip
 ARG aact_static_psql_url=https://aact.ctti-clinicaltrials.org/static/static_db_copies/${aact_filename}
 
+ENV AACT_DUMP_DIR=/tmp/aact
+
 RUN \
   apt-get update && \
   apt-get install curl unzip -y && \
   curl ${aact_static_psql_url} > /tmp/${aact_filename} && \
-  mkdir -p /tmp/aact && \
-  unzip /tmp/${aact_filename} -d /tmp/aact && \
-  rm /tmp/${aact_filename}
+  mkdir -p "${AACT_DUMP_DIR}" && \
+  unzip /tmp/${aact_filename} -d "${AACT_DUMP_DIR}" && \
+  rm /tmp/${aact_filename} && \
+  chown -R postgres "${AACT_DUMP_DIR}" && \
+  apt-get remove curl -y && \
+  apt-get remove unzip -y && \
+  apt-get install --only-upgrade exim4 -y && \
+  apt-get install --only-upgrade libxml2 -y && \
+  apt-get install --only-upgrade sensible-utils -y && \
+  touch /var/log/faillog
 
 COPY docker-entrypoint-initdb.d/* /docker-entrypoint-initdb.d
-

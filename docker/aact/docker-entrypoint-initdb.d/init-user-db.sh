@@ -1,5 +1,6 @@
 ############################################################################# {COPYRIGHT-TOP} ####
-#  Copyright 2018 Denilson Nastacio
+#  Copyright 2018 
+#  Denilson Nastacio
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -19,4 +20,9 @@ set -e
 
 # Removed --clean --create from the AACT instructions since the Docker postgres
 # startup will already have created the database
-pg_restore -e -v -O -x --dbname=aact --no-owner /tmp/aact/postgres_data.dmp
+aactDump="${AACT_DUMP_DIR}/postgres_data.dmp"
+pg_restore -e -v -O -x --dbname=aact --no-owner "${aactDump}"
+rm "${aactDump}"
+
+psql -d aact -c "create user ${READONLY_USER} password '${READONLY_PASSWORD}'"
+psql -d aact -c "grant select on all tables in schema public to ${READONLY_USER}"
