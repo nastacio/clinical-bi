@@ -35,6 +35,8 @@ spec:
               secretKeyRef:
                 name: ro-secret
                 key: password
+        - name: adminer
+          image: adminer
       imagePullSecrets:
         - name: %%image_pull_secret%%
 ---
@@ -52,3 +54,18 @@ spec:
    - protocol: TCP
      port: 5432
      nodePort: 30432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adminer-service
+  labels:
+    app: adminer
+spec:
+  selector:
+    app: aact
+  type: NodePort
+  ports:
+   - protocol: TCP
+     port: 8080
+     nodePort: 30080
