@@ -378,6 +378,15 @@ then
     echo "psql -h ${public_ip} -p ${public_port} -d aact -U ${psql_ro_user} -W"
     echo "Password is: ${psql_ro_password}"
     echo
+
+    echo
+    echo ${line}
+    echo "adminer connection information"
+    echo ${line}
+    adminer_public_port=$(kubectl get service adminer-service -o jsonpath='{.spec.ports[0].nodePort}')
+    echo "http://${public_ip}:${adminer_public_port}/?pgsql=${public_ip}%3A${public_port}&username=readonly&db=aact&ns=public"
+    echo "Password is: ${psql_ro_password}"
+    echo
 else
     echo $line
     echo "Deleting deployment ${cs_name} from cluster ${cs_name}"
