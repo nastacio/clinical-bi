@@ -40,7 +40,7 @@ def main(argv):
     # Build 2 hidden layer DNN with 10, 10 units respectively.
     classifier = tf.estimator.DNNClassifier(
         feature_columns=my_feature_columns,
-        hidden_units=[30, 20],
+        hidden_units=[30, 30],
         n_classes=2)
 
     # Train the Model.
