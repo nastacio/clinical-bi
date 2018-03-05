@@ -17,7 +17,7 @@
 # https://hub.docker.com/_/postgres/
 FROM postgres:9.6.6
 
-ARG aact_version=20180201
+ARG aact_version=20180301
 ARG aact_filename=${aact_version}_clinical_trials.zip
 ARG aact_static_psql_url=https://aact.ctti-clinicaltrials.org/static/static_db_copies/${aact_filename}
 
