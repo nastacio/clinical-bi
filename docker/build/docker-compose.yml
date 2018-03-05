@@ -23,7 +23,7 @@ services:
     build:
       context: ../aact
       args:
-        aact_version: 20180201
+        aact_version: 20180301
     image: aact:latest
     restart: always
     environment:

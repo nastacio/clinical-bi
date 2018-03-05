@@ -390,7 +390,7 @@ else
 
     echo
     echo "The cluster ${cs_name} is not deleted by this operation."
-    echo "Execute 'bx cs cluster rm ${cs_name}' if you want to delete the cluster."
+    echo "Execute 'bx cs cluster-rm ${cs_name}' if you want to delete the cluster."
 
     echo "Tear down complete"
 fi
