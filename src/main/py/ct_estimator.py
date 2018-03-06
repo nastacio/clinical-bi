@@ -32,15 +32,29 @@ def main(argv):
     # Fetch the data
     (train_x, train_y), (test_x, test_y),  (validate_x, validate_y) = ct_data.load_data()
 
+    epoch_feature_column = tf.feature_column.numeric_column("start_epoch")
+    bucketized_start_feature_column = tf.feature_column.bucketized_column(
+        source_column = epoch_feature_column,
+        boundaries = [2005, 2008, 2011, 2014, 2017])
+    completion_epoch_feature_column = tf.feature_column.numeric_column("completion_epoch")
+    bucketized_completion_feature_column = tf.feature_column.bucketized_column(
+        source_column = completion_epoch_feature_column,
+        boundaries = [2005, 2008, 2011, 2014, 2017])
+
     # Feature columns describe how to use the input.
     my_feature_columns = []
     for key in train_x.keys():
-        my_feature_columns.append(tf.feature_column.numeric_column(key=key))
+        if key == 'start_epoch':
+            my_feature_columns.append(bucketized_start_feature_column)
+        elif key == 'completion_epoch':
+            my_feature_columns.append(bucketized_completion_feature_column)
+        else:
+            my_feature_columns.append(tf.feature_column.numeric_column(key=key))
 
     # Build 2 hidden layer DNN with 10, 10 units respectively.
     classifier = tf.estimator.DNNClassifier(
         feature_columns=my_feature_columns,
-        hidden_units=[30, 30],
+        hidden_units=[100,100],
         n_classes=2)
 
     # Train the Model.
@@ -64,14 +78,14 @@ def main(argv):
         input_fn=lambda:ct_data.eval_input_fn(predict_x,
                                                 labels=None,
                                                 batch_size=args.batch_size))
-
-    for pred_dict, expec in zip(predictions, expected):
-        template = ('\nPrediction is "{}" ({:.1f}%), expected "{}"')
+    for pred_dict, expec, nct_id in zip(predictions, expected, expected.index):
+        template = ('\nPrediction for {} is "{}" ({:.1f}%), expected "{}"')
 
         class_id = pred_dict['class_ids'][0]
         probability = pred_dict['probabilities'][class_id]
 
-        print(template.format(ct_data.STATUS[class_id],
+        print(template.format(nct_id,
+                              ct_data.STATUS[class_id],
                               100 * probability, ct_data.STATUS[expec]))
 
 

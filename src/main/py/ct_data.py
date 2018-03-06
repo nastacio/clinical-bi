@@ -17,7 +17,8 @@ import psycopg2
 import configparser as cf
 import numpy as np
 
-SQL_COLUMN_NAMES = ['start_date',
+SQL_COLUMN_NAMES = ['nct_id',
+                    'start_date',
                     'completion_date',
                     'study_type',
                     'enrollment',
@@ -26,7 +27,7 @@ TF_COLUMN_NAME = ['start_epoch',
                   'completion_epoch',
                   'study_type_scalar',
                   'enrollment',
-                  'facility_count',
+                  'number_of_facilities',
                   'sponsor_type',
                   'sponsor_count'
                   'status']
@@ -47,6 +48,7 @@ def get_db_connection_str():
 
 
 def train_validate_test_split(df, train_percent=.6, validate_percent=.2, seed=None):
+    """Splits the original CT items into 3 sets: training, validation, testing"""
     np.random.seed(seed)
     perm = np.random.permutation(df.index)
     m = len(df.index)
@@ -62,26 +64,29 @@ def load_data(y_name='status'):
     """Returns the CT dataset as (train_x, train_y), (test_x, test_y), , (validate_x, validate_y)."""
 
     sqlstr= \
-    "SELECT " + ",s.".join(SQL_COLUMN_NAMES) + ", sp.agency_class as sponsor_type, count(sp2.id) as sponsor_count, count(f.id) as facility_count " + \
-    "FROM studies as s, conditions as c, facilities as f, sponsors as sp, sponsors as sp2 " + \
-    "WHERE s.nct_id=c.nct_id AND s.nct_id=f.nct_id AND s.nct_id=sp.nct_id AND s.nct_id=sp2.nct_id " + \
+    "SELECT s." + ",s.".join(SQL_COLUMN_NAMES) + ", sp.agency_class as sponsor_type, cv.number_of_facilities, count(sp2.id) as sponsor_count " + \
+    "FROM studies as s, conditions as c, calculated_values as cv, interventions as i, sponsors as sp, sponsors as sp2 " + \
+    "WHERE s.nct_id=c.nct_id AND s.nct_id=cv.nct_id AND s.nct_id=sp.nct_id AND s.nct_id=i.nct_id AND s.nct_id=sp2.nct_id " + \
     "AND s.start_date > '2007-01-01' AND s.completion_date > '2007-01-01' " + \
     "AND (c.downcase_name LIKE '%ancer%' OR c.downcase_name LIKE '%umor%' OR c.downcase_name LIKE '%inoma%')" + \
     "AND (s.overall_status='Completed' OR s.overall_status='Terminated') " + \
     "AND s.study_type in ('Interventional') " + \
-    "AND s.enrollment > 0 " + \
-    "AND sp.lead_or_collaborator = 'lead' AND sp.lead_or_collaborator IS NOT NULL " + \
-    "GROUP BY " + ",s.".join(SQL_COLUMN_NAMES) + ", sponsor_type"
-
+    "AND s.enrollment IS NOT NULL AND cv.number_of_facilities > 0 AND sp.agency_class IS NOT NULL " + \
+    "AND sp.lead_or_collaborator = 'lead' " + \
+    "AND i.intervention_type in ('Drug', 'Biological') " + \
+    "GROUP BY s." + ",s.".join(SQL_COLUMN_NAMES) + ", sponsor_type, cv.number_of_facilities"
+    
     dbargs=get_db_connection_str()
     conn = psycopg2.connect(dbargs)
     df = pd.read_sql_query(sql=sqlstr, 
-                           con=conn, 
+                           con=conn,
+                           index_col='nct_id', 
                            parse_dates={'start_date': '%Y-%m-%d', 'completion_date': '%Y-%m-%d'})
     conn.close()
+#    print(df.groupby('overall_status').count())
 
-    df['start_epoch'] = df.start_date.dt.month
-    df['completion_epoch'] = df.completion_date.dt.month
+    df['start_epoch'] = df.start_date.dt.year
+    df['completion_epoch'] = df.completion_date.dt.year
     df['study_type_scalar'] = 0
     df['agency_type_scalar'] = 0
     df['status'] = 0
