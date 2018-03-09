@@ -28,8 +28,12 @@ TF_COLUMN_NAME = ['start_epoch',
                   'study_type_scalar',
                   'enrollment',
                   'number_of_facilities',
+                  'gender_scalar',
+                  'minimum_age_num',
                   'sponsor_type',
-                  'sponsor_count'
+                  'sponsor_count',
+                  'intervention_type_count',
+                  'has_us_facility',
                   'status']
 
 STATUS = ['Completed', 
@@ -64,18 +68,18 @@ def load_data(y_name='status'):
     """Returns the CT dataset as (train_x, train_y), (test_x, test_y), , (validate_x, validate_y)."""
 
     sqlstr= \
-    "SELECT s." + ",s.".join(SQL_COLUMN_NAMES) + ", sp.agency_class as sponsor_type, cv.number_of_facilities, count(sp2.id) as sponsor_count " + \
-    "FROM studies as s, conditions as c, calculated_values as cv, interventions as i, sponsors as sp, sponsors as sp2 " + \
-    "WHERE s.nct_id=c.nct_id AND s.nct_id=cv.nct_id AND s.nct_id=sp.nct_id AND s.nct_id=i.nct_id AND s.nct_id=sp2.nct_id " + \
+    "SELECT s." + ",s.".join(SQL_COLUMN_NAMES) + ", sp.agency_class as sponsor_type, cv.number_of_facilities, e.gender, " + \
+    "    cv.minimum_age_num, cv.has_us_facility, count(i.intervention_type) as intervention_type_count, count(sp2.id) as sponsor_count " + \
+    "FROM studies as s, conditions as c, calculated_values as cv, eligibilities as e, interventions as i, sponsors as sp, sponsors as sp2 " + \
+    "WHERE s.nct_id=c.nct_id AND s.nct_id=cv.nct_id AND s.nct_id=sp.nct_id AND s.nct_id=i.nct_id AND s.nct_id=sp2.nct_id AND s.nct_id=e.nct_id " + \
     "AND s.start_date > '2007-01-01' AND s.completion_date > '2007-01-01' " + \
     "AND (c.downcase_name LIKE '%ancer%' OR c.downcase_name LIKE '%umor%' OR c.downcase_name LIKE '%inoma%')" + \
-    "AND (s.overall_status='Completed' OR s.overall_status='Terminated') " + \
+    "AND s.overall_status in ('Completed', 'Terminated') " + \
     "AND s.study_type in ('Interventional') " + \
     "AND s.enrollment IS NOT NULL AND cv.number_of_facilities > 0 AND sp.agency_class IS NOT NULL " + \
     "AND sp.lead_or_collaborator = 'lead' " + \
-    "AND i.intervention_type in ('Drug', 'Biological') " + \
-    "GROUP BY s." + ",s.".join(SQL_COLUMN_NAMES) + ", sponsor_type, cv.number_of_facilities"
-    
+    "GROUP BY s." + ",s.".join(SQL_COLUMN_NAMES) + ", sponsor_type, cv.number_of_facilities, e.gender, cv.minimum_age_num, cv.has_us_facility"
+
     dbargs=get_db_connection_str()
     conn = psycopg2.connect(dbargs)
     df = pd.read_sql_query(sql=sqlstr, 
@@ -83,12 +87,14 @@ def load_data(y_name='status'):
                            index_col='nct_id', 
                            parse_dates={'start_date': '%Y-%m-%d', 'completion_date': '%Y-%m-%d'})
     conn.close()
-#    print(df.groupby('overall_status').count())
+    print(sqlstr)    
+#     print(df.groupby('source').count())
 
     df['start_epoch'] = df.start_date.dt.year
     df['completion_epoch'] = df.completion_date.dt.year
     df['study_type_scalar'] = 0
     df['agency_type_scalar'] = 0
+    df['gender_scalar'] = 0
     df['status'] = 0
     df.loc[df.study_type == 'Interventional', 'study_type_scalar'] = 0
     df.loc[df.study_type == 'Observational', 'study_type_scalar'] = 1
@@ -98,11 +104,14 @@ def load_data(y_name='status'):
     df.loc[df.sponsor_type == 'NIH', 'agency_type_scalar'] = 1
     df.loc[df.sponsor_type == 'Industry', 'agency_type_scalar'] = 2
     df.loc[df.sponsor_type == 'Other', 'agency_type_scalar'] = 3
+    df.loc[df.gender == 'Male', 'gender_scalar'] = 1
+    df.loc[df.gender == 'Female', 'gender_scalar'] = 2
     
-    df.drop(columns=['start_date','completion_date','overall_status','study_type', 'sponsor_type'], inplace=True)
+    df.drop(columns=['start_date','completion_date','overall_status','study_type', 'sponsor_type', 'gender'], inplace=True)
 
     train, validate, test = train_validate_test_split(df, 0.7, 0.005)
 
+    df.to_csv("/Users/nastacio/tmp/ct4.csv")
     train_x, train_y = train, train.pop(y_name)
     test_x, test_y = test, test.pop(y_name)
     validate_x, validate_y = validate, validate.pop(y_name)

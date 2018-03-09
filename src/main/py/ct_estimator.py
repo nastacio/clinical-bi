@@ -26,35 +26,70 @@ parser.add_argument('--batch_size', default=100, type=int, help='batch size')
 parser.add_argument('--train_steps', default=1000, type=int,
                     help='number of training steps')
 
+
+# In order for the preceding call to work, the input_fn() must return
+# a dictionary containing 'my_feature_b' as a key. Furthermore, the values
+# assigned to 'my_feature_b' must belong to the set [0, 4).
+def input_fn():
+    return ({ 'my_feature_a':[0, 1, 2, 3], 'my_feature_b':[3, 1, 2, 2] },
+            ['U.S. Fed','NIH','Industry','Other'])
+
 def main(argv):
     args = parser.parse_args(argv[1:])
 
     # Fetch the data
     (train_x, train_y), (test_x, test_y),  (validate_x, validate_y) = ct_data.load_data()
 
-    epoch_feature_column = tf.feature_column.numeric_column("start_epoch")
-    bucketized_start_feature_column = tf.feature_column.bucketized_column(
-        source_column = epoch_feature_column,
-        boundaries = [2005, 2008, 2011, 2014, 2017])
-    completion_epoch_feature_column = tf.feature_column.numeric_column("completion_epoch")
-    bucketized_completion_feature_column = tf.feature_column.bucketized_column(
-        source_column = completion_epoch_feature_column,
-        boundaries = [2005, 2008, 2011, 2014, 2017])
-
     # Feature columns describe how to use the input.
     my_feature_columns = []
     for key in train_x.keys():
         if key == 'start_epoch':
+            epoch_feature_column = tf.feature_column.numeric_column("start_epoch")
+            bucketized_start_feature_column = tf.feature_column.bucketized_column(
+                source_column = epoch_feature_column,
+                boundaries = [2007, 2010, 2013, 2016])
             my_feature_columns.append(bucketized_start_feature_column)
         elif key == 'completion_epoch':
+            completion_epoch_feature_column = tf.feature_column.numeric_column("completion_epoch")
+            bucketized_completion_feature_column = tf.feature_column.bucketized_column(
+                source_column = completion_epoch_feature_column,
+                boundaries = [2007, 2010, 2013, 2016])
             my_feature_columns.append(bucketized_completion_feature_column)
+        elif key == 'minimum_age_num':
+            minimum_age_feature_column = tf.feature_column.numeric_column("minimum_age_num")
+            bucketized_completion_feature_column = tf.feature_column.bucketized_column(
+                source_column = minimum_age_feature_column,
+                boundaries = [19])
+            my_feature_columns.append(bucketized_completion_feature_column)
+        elif key == 'agency_type_scalar':
+            agency_identity_feature_column = tf.feature_column.categorical_column_with_identity(
+                key='agency_type_scalar',
+                num_buckets=4)
+            indicator_column = tf.feature_column.indicator_column(agency_identity_feature_column)
+            my_feature_columns.append(indicator_column)
+        elif key == 'gender_scalar':
+            gender_feature_column = tf.feature_column.categorical_column_with_identity(
+                key='gender_scalar',
+                num_buckets=3)
+            indicator_column = tf.feature_column.indicator_column(gender_feature_column)
+            my_feature_columns.append(indicator_column)
         else:
             my_feature_columns.append(tf.feature_column.numeric_column(key=key))
+
+#         elif key == 'source':
+#             vocabulary_feature_column = tf.feature_column.categorical_column_with_vocabulary_file(
+#                 key="source",
+#                 vocabulary_file="institutions.txt",
+#                 vocabulary_size=1084)
+#             embedding_column = tf.feature_column.embedding_column(
+#                 categorical_column=vocabulary_feature_column,
+#                 dimension=10)
+#             my_feature_columns.append(embedding_column)
 
     # Build 2 hidden layer DNN with 10, 10 units respectively.
     classifier = tf.estimator.DNNClassifier(
         feature_columns=my_feature_columns,
-        hidden_units=[100,100],
+        hidden_units=[10,10],
         n_classes=2)
 
     # Train the Model.
