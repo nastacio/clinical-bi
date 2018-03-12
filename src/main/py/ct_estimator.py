@@ -61,17 +61,23 @@ def main(argv):
                 source_column = minimum_age_feature_column,
                 boundaries = [19])
             my_feature_columns.append(bucketized_completion_feature_column)
-        elif key == 'agency_type_scalar':
+        elif key == 'agency_type_category':
             agency_identity_feature_column = tf.feature_column.categorical_column_with_identity(
-                key='agency_type_scalar',
+                key='agency_type_category',
                 num_buckets=4)
             indicator_column = tf.feature_column.indicator_column(agency_identity_feature_column)
             my_feature_columns.append(indicator_column)
-        elif key == 'gender_scalar':
+        elif key == 'gender_category':
             gender_feature_column = tf.feature_column.categorical_column_with_identity(
-                key='gender_scalar',
+                key='gender_category',
                 num_buckets=3)
             indicator_column = tf.feature_column.indicator_column(gender_feature_column)
+            my_feature_columns.append(indicator_column)
+        elif key == 'condition_stage':
+            condition_stage_feature_column = tf.feature_column.categorical_column_with_identity(
+                key='condition_stage',
+                num_buckets=3)
+            indicator_column = tf.feature_column.indicator_column(condition_stage_feature_column)
             my_feature_columns.append(indicator_column)
         else:
             my_feature_columns.append(tf.feature_column.numeric_column(key=key))
