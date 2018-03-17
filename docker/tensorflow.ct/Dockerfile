@@ -23,6 +23,7 @@ RUN \
     apt-get update && \
     apt-get install unzip && \
     unzip -q /tmp/clinical-bi.zip -d /usr/local && \
+    rm /tmp/clinical-bi.zip && \
     apt-get remove unzip -y && \
     pip install --upgrade pip && \
     pip install psycopg2-binary tensorflow pandas configparser
