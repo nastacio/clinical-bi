@@ -38,3 +38,8 @@ services:
     restart: always
     ports:
       - 8080:8080
+      
+  tensorflow.ct:
+    build:
+      context: ../tensorflow.ct
+    image: tensorflow.ct:latest

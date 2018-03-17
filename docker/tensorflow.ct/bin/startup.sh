@@ -14,17 +14,5 @@
 #  limitations under the License.
 ############################################################################# {COPYRIGHT-END} ####
 
-FROM python
-
-COPY bin /usr/local/bin
-RUN \
-    chmod +x /usr/local/bin/startup.sh && \
-    curl -s https://codeload.github.com/nastacio/clinical-bi/zip/master > /tmp/clinical-bi.zip && \
-    apt-get update && \
-    apt-get install unzip && \
-    unzip -q /tmp/clinical-bi.zip -d /usr/local && \
-    apt-get remove unzip -y && \
-    pip install --upgrade pip && \
-    pip install psycopg2-binary tensorflow pandas configparser
-
-ENTRYPOINT /usr/local/bin/startup.sh
+cd /usr/local/clinical-bi-master/src/main/py && \
+python ct_estimator.py
