@@ -25,20 +25,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', default=100, type=int, help='batch size')
 parser.add_argument('--train_steps', default=1000, type=int,
                     help='number of training steps')
+parser.add_argument('--database_properties', default='aact.properties',
+                    help='path for file with AACT connection parameters')
 
-
-# In order for the preceding call to work, the input_fn() must return
-# a dictionary containing 'my_feature_b' as a key. Furthermore, the values
-# assigned to 'my_feature_b' must belong to the set [0, 4).
-def input_fn():
-    return ({ 'my_feature_a':[0, 1, 2, 3], 'my_feature_b':[3, 1, 2, 2] },
-            ['U.S. Fed','NIH','Industry','Other'])
 
 def main(argv):
     args = parser.parse_args(argv[1:])
 
     # Fetch the data
-    (train_x, train_y), (test_x, test_y),  (validate_x, validate_y) = ct_data.load_data()
+    (train_x, train_y), (test_x, test_y),  (validate_x, validate_y) = ct_data.load_data(db_props=args.database_properties)
 
     # Feature columns describe how to use the input.
     my_feature_columns = []
@@ -49,12 +44,6 @@ def main(argv):
                 source_column = epoch_feature_column,
                 boundaries = [2007, 2010, 2013, 2016])
             my_feature_columns.append(bucketized_start_feature_column)
-        elif key == 'completion_epoch':
-            completion_epoch_feature_column = tf.feature_column.numeric_column("completion_epoch")
-            bucketized_completion_feature_column = tf.feature_column.bucketized_column(
-                source_column = completion_epoch_feature_column,
-                boundaries = [2007, 2010, 2013, 2016])
-            my_feature_columns.append(bucketized_completion_feature_column)
         elif key == 'minimum_age_num':
             minimum_age_feature_column = tf.feature_column.numeric_column("minimum_age_num")
             bucketized_completion_feature_column = tf.feature_column.bucketized_column(
@@ -72,6 +61,12 @@ def main(argv):
                 key='gender_category',
                 num_buckets=3)
             indicator_column = tf.feature_column.indicator_column(gender_feature_column)
+            my_feature_columns.append(indicator_column)
+        elif key == 'phase_category':
+            phase_feature_column = tf.feature_column.categorical_column_with_identity(
+                key='phase_category',
+                num_buckets=5)
+            indicator_column = tf.feature_column.indicator_column(phase_feature_column)
             my_feature_columns.append(indicator_column)
         elif key == 'condition_stage':
             condition_stage_feature_column = tf.feature_column.categorical_column_with_identity(
