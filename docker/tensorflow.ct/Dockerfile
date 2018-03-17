@@ -16,7 +16,7 @@
 
 FROM python
 
-COPY bin /usr/local/bin
+COPY bin/startup.sh /usr/local/bin/startup.sh
 RUN \
     chmod +x /usr/local/bin/startup.sh && \
     curl -s https://codeload.github.com/nastacio/clinical-bi/zip/master > /tmp/clinical-bi.zip && \
