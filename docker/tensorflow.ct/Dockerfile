@@ -16,9 +16,7 @@
 
 FROM python
 
-COPY bin/startup.sh /usr/local/bin/startup.sh
 RUN \
-    chmod +x /usr/local/bin/startup.sh && \
     curl -s https://codeload.github.com/nastacio/clinical-bi/zip/master > /tmp/clinical-bi.zip && \
     apt-get update && \
     apt-get install unzip && \
@@ -28,4 +26,4 @@ RUN \
     pip install --upgrade pip && \
     pip install psycopg2-binary tensorflow pandas configparser
 
-ENTRYPOINT /usr/local/bin/startup.sh
+ENTRYPOINT /usr/local/bin/python /usr/local/clinical-bi-master/src/main/py/ct_estimator.py --database_properties /usr/local/clinical-bi-master/src/main/py/aact.properties

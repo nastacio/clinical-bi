@@ -45,7 +45,7 @@ STATUS = ['Completed',
 def get_db_connection_str(db_props = 'aact.properties'):
     """Returns a psycopg2 DB database connection string"""
     config = cf.ConfigParser()
-    with open(r'aact.properties') as f:
+    with open(db_props) as f:
         config.readfp(f, filename=db_props)
     dbargs=""
     for k, v in config['aact.database'].items():
