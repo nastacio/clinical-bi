@@ -20,6 +20,7 @@ import numpy as np
 SQL_COLUMN_NAMES = ['nct_id',
                     'start_date',
                     'study_type',
+                    'source',
                     'enrollment',
                     'phase',
                     'overall_status']
@@ -29,18 +30,19 @@ TF_COLUMN_NAME = ['start_epoch',
                   'number_of_facilities',
                   'gender_category',
                   'condition_stage',
-                  'minimum_age_num',
                   'sponsor_type',
                   'sponsor_count',
                   'intervention_type_count',
                   'design_group_intervention_count',
                   'has_us_facility',
-                  'phase_category',
                   'status']
 
-STATUS = ['Completed', 
+STATUS = ['Completed',
           'Terminated']
 
+PHASE = ['Phase 1', 
+         'Phase 2',
+         'Phase 3']
 
 def get_db_connection_str(db_props = 'aact.properties'):
     """Returns a psycopg2 DB database connection string"""
@@ -69,11 +71,16 @@ def train_validate_test_split(df, train_percent=.6, validate_percent=.2, seed=No
 def load_data(y_name='status', db_props='aact.properties'):
     """Returns the CT dataset as (train_x, train_y), (test_x, test_y), , (validate_x, validate_y)."""
 
+    dbargs=get_db_connection_str(db_props)
+    conn = psycopg2.connect(dbargs)
+
     sqlstr= \
     "SELECT s." + ",s.".join(SQL_COLUMN_NAMES) + ", sp.agency_class as sponsor_type, cv.number_of_facilities, e.gender, " + \
-    "    cv.minimum_age_num, cv.has_us_facility, CASE WHEN s.brief_title LIKE '%age III%' THEN '1' WHEN s.brief_title LIKE '%age IV%' THEN '2' ELSE 0 END as condition_stage, " + \
-    "    count(dgi.id) as design_group_intervention_count, count(i.intervention_type) as intervention_type_count, count(sp2.id) as sponsor_count " + \
-    "FROM studies as s, conditions as c, calculated_values as cv, eligibilities as e, interventions as i, sponsors as sp, sponsors as sp2, design_group_interventions as dgi " + \
+    "    cv.has_us_facility, CASE WHEN s.brief_title LIKE '%age III%' THEN '1' WHEN s.brief_title LIKE '%age IV%' THEN '2' ELSE 0 END as condition_stage, " + \
+    "    count(dgi.id) as design_group_intervention_count, count(distinct(i.intervention_type)) as intervention_type_count, " + \
+    "    count(distinct(sp2.name)) as sponsor_count " + \
+    "FROM studies as s, conditions as c, calculated_values as cv, eligibilities as e, interventions as i, " + \
+    "    sponsors as sp, sponsors as sp2, design_group_interventions as dgi " + \
     "WHERE s.nct_id=c.nct_id AND s.nct_id=cv.nct_id AND s.nct_id=sp.nct_id AND s.nct_id=i.nct_id AND s.nct_id=sp2.nct_id AND s.nct_id=e.nct_id  AND s.nct_id=dgi.nct_id " + \
     "AND s.start_date > '2007-01-01' " + \
     "AND (c.downcase_name LIKE '%ancer%' OR c.downcase_name LIKE '%umor%' OR c.downcase_name LIKE '%inoma%')" + \
@@ -81,23 +88,25 @@ def load_data(y_name='status', db_props='aact.properties'):
     "AND s.study_type in ('Interventional') " + \
     "AND s.enrollment IS NOT NULL AND cv.number_of_facilities > 0 AND sp.agency_class IS NOT NULL " + \
     "AND sp.lead_or_collaborator = 'lead' " + \
-    "GROUP BY s." + ",s.".join(SQL_COLUMN_NAMES) + ", sponsor_type, cv.number_of_facilities, e.gender, cv.minimum_age_num, cv.has_us_facility, s.brief_title"
-
-    dbargs=get_db_connection_str(db_props)
-    conn = psycopg2.connect(dbargs)
+    "GROUP BY s." + ",s.".join(SQL_COLUMN_NAMES) + ", sponsor_type, cv.number_of_facilities, e.gender, cv.has_us_facility, s.brief_title"
+    print(sqlstr)    
     df = pd.read_sql_query(sql=sqlstr, 
                            con=conn,
                            index_col='nct_id', 
                            parse_dates={'start_date': '%Y-%m-%d'})
     conn.close()
-    print(sqlstr)    
-#     print(df.groupby('source').count())
+    
+#     df_sponsors = df1['source'].value_counts()
+#     df=df1.join(df_sponsors,
+#                 on='source',
+#                 rsuffix='_local')
+
+#     print(df.groupby('phase').count())
 
     df['start_epoch'] = df.start_date.dt.year
     df['study_type_category'] = 0
     df['agency_type_category'] = 0
     df['gender_category'] = 0
-    df['phase_category'] = 0
     df['status'] = 0
     df.loc[df.study_type == 'Interventional', 'study_type_category'] = 0
     df.loc[df.study_type == 'Observational', 'study_type_category'] = 1
@@ -109,15 +118,8 @@ def load_data(y_name='status', db_props='aact.properties'):
     df.loc[df.sponsor_type == 'Other', 'agency_type_category'] = 3
     df.loc[df.gender == 'Male', 'gender_category'] = 1
     df.loc[df.gender == 'Female', 'gender_category'] = 2
-    df.loc[df.phase == 'Early Phase 1', 'phase_category'] = 1
-    df.loc[df.phase == 'Phase 1', 'phase_category'] = 1
-    df.loc[df.phase == 'Phase 1/Phase 2', 'phase_category'] = 2
-    df.loc[df.phase == 'Phase 2', 'phase_category'] = 2
-    df.loc[df.phase == 'Phase 2/Phase 3', 'phase_category'] = 3
-    df.loc[df.phase == 'Phase 3', 'phase_category'] = 3
-    df.loc[df.phase == 'Phase 4', 'phase_category'] = 4
     
-    df.drop(columns=['start_date','overall_status','study_type', 'sponsor_type', 'gender', 'phase'], inplace=True)
+    df.drop(columns=['start_date','overall_status','study_type', 'sponsor_type', 'gender', 'phase', 'source'], inplace=True)
 
     train, validate, test = train_validate_test_split(df, 0.7, 0.005)
 

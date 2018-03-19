@@ -44,12 +44,6 @@ def main(argv):
                 source_column = epoch_feature_column,
                 boundaries = [2007, 2010, 2013, 2016])
             my_feature_columns.append(bucketized_start_feature_column)
-        elif key == 'minimum_age_num':
-            minimum_age_feature_column = tf.feature_column.numeric_column("minimum_age_num")
-            bucketized_completion_feature_column = tf.feature_column.bucketized_column(
-                source_column = minimum_age_feature_column,
-                boundaries = [19])
-            my_feature_columns.append(bucketized_completion_feature_column)
         elif key == 'agency_type_category':
             agency_identity_feature_column = tf.feature_column.categorical_column_with_identity(
                 key='agency_type_category',
@@ -61,12 +55,6 @@ def main(argv):
                 key='gender_category',
                 num_buckets=3)
             indicator_column = tf.feature_column.indicator_column(gender_feature_column)
-            my_feature_columns.append(indicator_column)
-        elif key == 'phase_category':
-            phase_feature_column = tf.feature_column.categorical_column_with_identity(
-                key='phase_category',
-                num_buckets=5)
-            indicator_column = tf.feature_column.indicator_column(phase_feature_column)
             my_feature_columns.append(indicator_column)
         elif key == 'condition_stage':
             condition_stage_feature_column = tf.feature_column.categorical_column_with_identity(
@@ -90,7 +78,7 @@ def main(argv):
     # Build 2 hidden layer DNN with 10, 10 units respectively.
     classifier = tf.estimator.DNNClassifier(
         feature_columns=my_feature_columns,
-        hidden_units=[10,10],
+        hidden_units=[200],
         n_classes=2)
 
     # Train the Model.
