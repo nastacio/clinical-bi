@@ -42,8 +42,14 @@ def main(argv):
             epoch_feature_column = tf.feature_column.numeric_column("start_epoch")
             bucketized_start_feature_column = tf.feature_column.bucketized_column(
                 source_column = epoch_feature_column,
-                boundaries = [2007, 2010, 2013, 2016])
+                boundaries = [2009, 2011, 2013, 2015, 2017, 2020])
             my_feature_columns.append(bucketized_start_feature_column)
+        if key == 'drug_epoch':
+            epoch_feature_column = tf.feature_column.numeric_column("drug_epoch")
+            bucketized_drug_feature_column = tf.feature_column.bucketized_column(
+                source_column = epoch_feature_column,
+                boundaries = [1990,1995,2000,2005,2010,2015,2020])
+            my_feature_columns.append(bucketized_drug_feature_column)
         elif key == 'agency_type_category':
             agency_identity_feature_column = tf.feature_column.categorical_column_with_identity(
                 key='agency_type_category',
@@ -62,6 +68,30 @@ def main(argv):
                 num_buckets=3)
             indicator_column = tf.feature_column.indicator_column(condition_stage_feature_column)
             my_feature_columns.append(indicator_column)
+        elif key == 'intervention_model_type':
+            intervention_feature_column = tf.feature_column.categorical_column_with_identity(
+                key='intervention_model_type',
+                num_buckets=6)
+            indicator_column = tf.feature_column.indicator_column(intervention_feature_column)
+            my_feature_columns.append(indicator_column)
+        elif key == 'allocation_type':
+            allocation_feature_column = tf.feature_column.categorical_column_with_identity(
+                key='allocation_type',
+                num_buckets=3)
+            indicator_column = tf.feature_column.indicator_column(allocation_feature_column)
+            my_feature_columns.append(indicator_column)
+        elif key == 'primary_purpose_type':
+            purpose_feature_column = tf.feature_column.categorical_column_with_identity(
+                key='primary_purpose_type',
+                num_buckets=10)
+            indicator_column = tf.feature_column.indicator_column(purpose_feature_column)
+            my_feature_columns.append(indicator_column)
+        elif key == 'study_type_category':
+            study_type_feature_column = tf.feature_column.categorical_column_with_identity(
+                key='study_type_category',
+                num_buckets=5)
+            indicator_column = tf.feature_column.indicator_column(study_type_feature_column)
+            my_feature_columns.append(indicator_column)
         else:
             my_feature_columns.append(tf.feature_column.numeric_column(key=key))
 
@@ -78,7 +108,7 @@ def main(argv):
     # Build 2 hidden layer DNN with 10, 10 units respectively.
     classifier = tf.estimator.DNNClassifier(
         feature_columns=my_feature_columns,
-        hidden_units=[200],
+        hidden_units=[30,30],
         n_classes=2)
 
     # Train the Model.
