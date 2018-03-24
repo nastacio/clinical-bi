@@ -111,8 +111,6 @@ def load_data(y_name='status', db_props='aact.properties'):
 
 #    print(df.groupby('phase').count())
 
-    df.to_csv('/Users/nastacio/tmp/ct.clinical.csv')
-
     df['start_epoch'] = df.start_date.dt.year
     df['drug_epoch'] = df.drug_recency.dt.year
     df['study_type_category'] = 0
