@@ -23,7 +23,7 @@ import ct_data
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', default=100, type=int, help='batch size')
-parser.add_argument('--train_steps', default=1000, type=int,
+parser.add_argument('--train_steps', default=8000, type=int,
                     help='number of training steps')
 parser.add_argument('--database_properties', default='aact.properties',
                     help='path for file with AACT connection parameters')
@@ -108,7 +108,7 @@ def main(argv):
     # Build 2 hidden layer DNN with 10, 10 units respectively.
     classifier = tf.estimator.DNNClassifier(
         feature_columns=my_feature_columns,
-        hidden_units=[30,30],
+        hidden_units=[60,60],
         n_classes=2)
 
     # Train the Model.
