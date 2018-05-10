@@ -197,7 +197,7 @@ echo Authenticating API keys with IBM Cloud
 echo $line
 
 bx_output=$(mktemp -t bxlogin).txt
-bx login --apikey ${api_key} > "${bx_output}" 2>&1 || \
+bx login --apikey ${api_key} --check-version=false > "${bx_output}" 2>&1 || \
     (cat "${bx_output}"
      rm "${bx_output}"
      echo "Unable to authenticate IBM Cloud API Key"
