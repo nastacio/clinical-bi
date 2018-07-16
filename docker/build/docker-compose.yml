@@ -23,7 +23,7 @@ services:
     build:
       context: ../aact
       args:
-        aact_version: 20180301
+        aact_version: 20180701
     image: aact:latest
     restart: always
     environment:
@@ -43,3 +43,9 @@ services:
     build:
       context: ../tensorflow.ct
     image: tensorflow.ct:latest
+    secrets:
+      - aact_credentials
+
+secrets:
+  aact_credentials:
+    file: ~/etc/aact.properties
