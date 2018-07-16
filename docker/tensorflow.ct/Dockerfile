@@ -26,4 +26,4 @@ RUN \
     pip install --upgrade pip && \
     pip install psycopg2-binary tensorflow pandas configparser
 
-ENTRYPOINT /usr/local/bin/python /usr/local/clinical-bi-master/src/main/py/ct_estimator.py --database_properties /usr/local/clinical-bi-master/src/main/py/aact.properties
+ENTRYPOINT /usr/local/bin/python /usr/local/clinical-bi-master/src/main/py/ct_estimator.py --database_properties /run/secrets/aact_credentials
