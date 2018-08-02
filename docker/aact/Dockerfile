@@ -17,7 +17,7 @@
 # https://hub.docker.com/_/postgres/
 FROM postgres:9.6.6
 
-ARG aact_version=20180501
+ARG aact_version=${aact_version:-20180801}
 ARG aact_filename=${aact_version}_clinical_trials.zip
 ARG aact_static_psql_url=https://aact.ctti-clinicaltrials.org/static/static_db_copies/monthly/${aact_filename}
 
@@ -26,7 +26,7 @@ ENV AACT_DUMP_DIR=/tmp/aact
 RUN \
   apt-get update && \
   apt-get install curl unzip -y && \
-  echo "Retrieving AACT db dump" && \
+  echo "Retrieving AACT db dump from ${aact_static_psql_url}" && \
   curl ${aact_static_psql_url} > /tmp/${aact_filename} && \
   mkdir -p "${AACT_DUMP_DIR}" && \
   unzip /tmp/${aact_filename} -d "${AACT_DUMP_DIR}" && \

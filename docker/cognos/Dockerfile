@@ -14,38 +14,8 @@
 #  limitations under the License.
 ############################################################################# {COPYRIGHT-END} ####
 
+FROM ubuntu
 
-version: '3.3'
+# https://www-01.ibm.com/marketing/iwm/iwm/web/signup.do?source=ibm-analytics&S_PKG=ov42988&S_TACT=M161076W&dynform=20912&lang=en_US
 
-services:
 
-  aact:
-    build:
-      context: ../aact
-      args:
-        aact_version: 20180801
-    image: aact:latest
-    restart: always
-    environment:
-      POSTGRES_DB: aact
-      POSTGRES_USER: aact_user
-      POSTGRES_PASSWORD: aact_password
-      READONLY_USER: readonly
-      READONLY_PASSWORD: readonly
-
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
-      
-  tensorflow.ct:
-    build:
-      context: ../tensorflow.ct
-    image: tensorflow.ct:latest
-    secrets:
-      - aact_credentials
-
-secrets:
-  aact_credentials:
-    file: ~/etc/aact.properties
