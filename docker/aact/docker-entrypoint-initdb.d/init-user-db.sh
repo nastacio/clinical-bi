@@ -25,6 +25,7 @@ pg_restore -e -v -O -x --dbname=aact --no-owner "${aactDump}"
 rm "${aactDump}"
 
 psql -d aact -c "create user ${READONLY_USER} password '${READONLY_PASSWORD}'"
-psql -d aact -c "grant select on all tables in schema public to ${READONLY_USER}"
+psql -d aact -c "grant CONNECT on database aact to ${READONLY_USER}"
+psql -d aact -c "grant select on all tables in schema ctgov to ${READONLY_USER}"
 psql -d aact -c "grant usage on schema ctgov to ${READONLY_USER}" 
 

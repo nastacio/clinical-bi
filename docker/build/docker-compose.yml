@@ -26,6 +26,8 @@ services:
         aact_version: 20180801
     image: aact:latest
     restart: always
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_DB: aact
       POSTGRES_USER: aact_user
