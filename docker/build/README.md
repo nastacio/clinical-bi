@@ -31,18 +31,18 @@ place those the credentials into the file.
 These are the credentials to a DB2 Warehouse service instance in the IBM Cloud.
 
 	{
-	"hostname": "dashdb-entry-yp-dal09-09.services.dal.bluemix.net",
-	"password": "_kSx4W0_hCxK",
-	"https_url": "https://dashdb-entry-yp-dal09-09.services.dal.bluemix.net:8443",
+	"hostname": "...",
+	"password": "...",
+	"https_url": "...",
 	"port": 50000,
-	"ssldsn": "DATABASE=BLUDB;HOSTNAME=dashdb-entry-yp-dal09-09.services.dal.bluemix.net;PORT=50001;PROTOCOL=TCPIP;UID=dash9184;PWD=_kSx4W0_hCxK;Security=SSL;",
-	"host": "dashdb-entry-yp-dal09-09.services.dal.bluemix.net",
-	"jdbcurl": "jdbc:db2://dashdb-entry-yp-dal09-09.services.dal.bluemix.net:50000/BLUDB",
-	"uri": "db2://dash9184:_kSx4W0_hCxK@dashdb-entry-yp-dal09-09.services.dal.bluemix.net:50000/BLUDB",
+	"ssldsn": "...;Security=SSL;",
+	"host": "...",
+	"jdbcurl": "...",
+	"uri": "...:50001/BLUDB",
 	"db": "BLUDB",
-	"dsn": "DATABASE=BLUDB;HOSTNAME=dashdb-entry-yp-dal09-09.services.dal.bluemix.net;PORT=50000;PROTOCOL=TCPIP;UID=dash9184;PWD=_kSx4W0_hCxK;",
-	"username": "dash9184",
-	"ssljdbcurl": "jdbc:db2://dashdb-entry-yp-dal09-09.services.dal.bluemix.net:50001/BLUDB:sslConnection=true;"
+	"dsn": "...;",
+	"username": "...",
+	"ssljdbcurl": "...;"
 	}
 	
 	
