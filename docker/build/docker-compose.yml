@@ -35,6 +35,18 @@ services:
       READONLY_USER: readonly
       READONLY_PASSWORD: readonly
 
+  # https://www.ibm.com/support/knowledgecenter/SS6NHC/com.ibm.swg.im.dashdb.doc/admin/deploying_client_container.html
+  db2wh:
+    build:
+      context: ../db2wh
+    volumes:
+      - db2wh_profile:/mnt/clientdir:rw
+    stdin_open: true
+    tty: true
+    secrets:
+      - db2wh_credentials
+      - aact_credentials
+
   adminer:
     image: adminer
     restart: always
@@ -51,3 +63,8 @@ services:
 secrets:
   aact_credentials:
     file: ~/etc/aact.properties
+  db2wh_credentials:
+    file: ~/etc/db2wh.aact.credentials.json
+
+volumes:
+  db2wh_profile: {}
