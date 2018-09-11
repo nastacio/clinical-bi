@@ -38,6 +38,8 @@ fi
 
 echo "INFO: Validating DB2 connectivity parameters" 
 
+. /mnt/clientdir/clienthome/db2inst1/sqllib/db2profile
+
 db2host=$(grep \"hostname\" "${db2wh_secret}" | cut -d "\"" -f 4)
 db2username=$(grep \"username\" "${db2wh_secret}" | cut -d "\"" -f 4)
 db2password=$(grep \"password\" "${db2wh_secret}" | cut -d "\"" -f 4)
@@ -68,7 +70,8 @@ psqlpassword=$(grep "^password=" "${aact_secret}" | cut -d "=" -f 2)
 psqldb=$(grep "^dbname=" "${aact_secret}" | cut -d "=" -f 2)
 psqlport=$(grep "^port=" "${aact_secret}" | cut -d "=" -f 2)
     
-PGPASSWORD=${psqlpassword} psql -h ${psqlhost} -p ${psqlport} -d ${psqldb} -U ${psqlusername} -c "select s.nct_id, 
+PGPASSWORD=${psqlpassword} psql -h ${psqlhost} -p ${psqlport} -d ${psqldb} -U ${psqlusername}  -o "${ctgov_dump}" -t -A --field-separator="|" << EOF
+select s.nct_id, 
     s.overall_status,
     s.phase, 
     s.start_date, 
@@ -100,7 +103,8 @@ PGPASSWORD=${psqlpassword} psql -h ${psqlhost} -p ${psqlport} -d ${psqldb} -U ${
     from ctgov.studies as s 
     left outer join ctgov.calculated_values as v on s.nct_id = v.nct_id 
     left outer join ctgov.conditions as c on s.nct_id = c.nct_id 
-    left outer join ctgov.interventions as i on s.nct_id = i.nct_id;" --field-separator=\| -o "${ctgov_dump}" -t -A
+    left outer join ctgov.interventions as i on s.nct_id = i.nct_id;
+EOF
 
 echo "INFO: Creating DB2 Warehouse table." 
 
@@ -122,7 +126,7 @@ NUMBER_OF_FACILITIES INTEGER,
 HAS_US_FACILITY CHAR(1),
 HAS_SINGLE_FACILITY CHAR(1),
 CONDITION VARCHAR(256),
-CONDITION_ONCO CHAR(2),
+CONDITION_ONCO CHAR(1),
 INTERVENTION_TYPE VARCHAR(32),
 INTERVENTION_NAME VARCHAR(256));
 EOF
@@ -140,9 +144,10 @@ rm -f "${load_messages}"
 echo "Loading messages into DB2 warehouse at ${db2host}. Logs being written at [${load_messages}]"
 
 sed -i "s/\"/\'/g" "${ctgov_dump}"
+sed -i "s/ | / - /g" "${ctgov_dump}"
 db2 connect to ${db2alias} user ${db2username} using ${db2password}
 db2 load client from "${ctgov_dump}" of del modified by chardel~ coldel\| identityoverride anyorder messages "${load_messages}" insert into ${ctgov_table}
-db2 reset connection
+db2 connect reset
 db2 terminate
 
 rm -f "${ctgov_dump}"
