@@ -29,3 +29,6 @@ psql -d aact -c "grant CONNECT on database aact to ${READONLY_USER}"
 psql -d aact -c "grant select on all tables in schema ctgov to ${READONLY_USER}"
 psql -d aact -c "grant usage on schema ctgov to ${READONLY_USER}" 
 
+# https://stackoverflow.com/questions/2875610/permanently-set-postgresql-schema-path
+psql -d aact -c "alter database aact SET search_path TO ctgov"
+
