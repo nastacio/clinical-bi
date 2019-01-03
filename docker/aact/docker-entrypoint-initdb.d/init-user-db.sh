@@ -68,7 +68,7 @@ select
     count(distinct s_withdrawn.nct_id) as withdrawn_interventional_studies,
     case when 
             (count(distinct s_completed.nct_id) +  count(distinct s_terminated.nct_id) + count (distinct s_withdrawn.nct_id)) > 0 
-         then (count(distinct s_completed.nct_id)/(count(distinct s_completed.nct_id) +  count(distinct s_terminated.nct_id) + count (distinct s_withdrawn.nct_id))) 
+         then (cast (count(distinct s_completed.nct_id) as real)/(count(distinct s_completed.nct_id) +  count(distinct s_terminated.nct_id) + count (distinct s_withdrawn.nct_id))) 
          else (0) 
          end as intervention_completion_ratio
 from ctgov.conditions as c
