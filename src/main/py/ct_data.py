@@ -60,25 +60,24 @@ def load_data(y_name='status', db_props='aact.properties'):
 
     sqlstr= \
     "SELECT s." + ",s.".join(SQL_COLUMN_NAMES) + ", sp.agency_class as sponsor_type, cv.number_of_facilities, e.gender, " + \
-    "    cv.has_us_facility, CASE WHEN s.brief_title LIKE '%age III%' THEN '1' WHEN s.brief_title LIKE '%age IV%' THEN '2' ELSE 0 END as condition_stage, " + \
+    "    cv.has_us_facility, cv.average_condition_completion_ratio, " + \
+    "    CASE WHEN s.brief_title LIKE '%age III%' THEN '1' WHEN s.brief_title LIKE '%age IV%' THEN '2' ELSE 0 END as condition_stage, " + \
     "    CASE WHEN s.number_of_arms IS NULL THEN 0 ELSE s.number_of_arms END as number_of_arms_clean, " + \
-    "    d.allocation, d.intervention_model, d.primary_purpose, (s.start_date - i2.drug_earliest) as drug_recency, bs.description, " + \
+    "    d.allocation, d.intervention_model, d.primary_purpose, 0 as drug_recency, bs.description, " + \
     "    count(dgi.id) as design_group_intervention_count, count(distinct(i.intervention_type)) as intervention_type_count, " + \
     "    count(distinct(sp2.name)) as sponsor_count " + \
     "FROM studies as s, calculated_values as cv, eligibilities as e, interventions as i, " + \
-    "    sponsors as sp, sponsors as sp2, design_group_interventions as dgi, designs as d, brief_summaries as bs," + \
-    "    (SELECT i.nct_id as nct_id, min(s.study_first_submitted_date) as drug_earliest, count(distinct(i.nct_id)) as drug_frequency " + \
-    "    FROM studies as s, interventions as i" + \
-    "    WHERE s.nct_id = i.nct_id AND intervention_type='Drug' " + \
-    "    GROUP BY i.nct_id) as i2 " + \
-    "WHERE s.nct_id=cv.nct_id AND s.nct_id=sp.nct_id AND s.nct_id=i.nct_id AND s.nct_id=sp2.nct_id AND s.nct_id=e.nct_id  AND s.nct_id=dgi.nct_id AND s.nct_id=d.nct_id AND s.nct_id=i2.nct_id AND s.nct_id=bs.nct_id " + \
+    "    sponsors as sp, sponsors as sp2, design_group_interventions as dgi, designs as d, brief_summaries as bs " + \
+    "WHERE s.nct_id=cv.nct_id AND s.nct_id=sp.nct_id AND s.nct_id=i.nct_id AND s.nct_id=sp2.nct_id AND s.nct_id=e.nct_id " + \
+    "AND s.nct_id=dgi.nct_id AND s.nct_id=d.nct_id AND s.nct_id=bs.nct_id " + \
     "AND s.start_date > '2009-01-01' " + \
-    "AND (s.brief_title LIKE '%ancer%' OR s.brief_title LIKE '%umor%' OR s.brief_title LIKE '%umour%' OR s.brief_title LIKE '%eukemia%' OR s.brief_title LIKE '%yeloma%' OR s.brief_title LIKE '%ymphoma%' OR s.brief_title LIKE '%arcoma%')" + \
+    "AND cv.is_oncology = true " + \
     "AND s.overall_status in ('Completed', 'Terminated') " + \
     "AND s.enrollment IS NOT NULL AND cv.number_of_facilities > 0  " + \
     "AND sp.lead_or_collaborator = 'lead' " + \
-    "GROUP BY s." + ",s.".join(SQL_COLUMN_NAMES) + ", sponsor_type, cv.number_of_facilities, e.gender, cv.has_us_facility, s.brief_title, s.number_of_arms, e.criteria, " + \
-    "    d.allocation, d.intervention_model, d.primary_purpose, drug_recency, bs.description "
+    "GROUP BY s." + ",s.".join(SQL_COLUMN_NAMES) + ", sponsor_type, cv.number_of_facilities, cv.average_condition_completion_ratio, " + \
+    "    e.gender, cv.has_us_facility, s.brief_title, s.number_of_arms, e.criteria, " + \
+    "    d.allocation, d.intervention_model, d.primary_purpose, bs.description "
     print(sqlstr)    
     df = pd.read_sql_query(sql=sqlstr, 
                            con=conn,
@@ -135,7 +134,7 @@ def load_data(y_name='status', db_props='aact.properties'):
     df.loc[df.primary_purpose == 'Supportive Care', 'primary_purpose_type'] = 8
     df.loc[df.primary_purpose == 'Treatment', 'primary_purpose_type'] = 9
     
-    df.to_csv('/Users/nastacio/tmp/ct.csv')
+    df.to_csv('/tmp/ct.csv')
 
     df.drop(columns=['start_date','overall_status','sponsor_type', 'gender', 'phase', 'study_type', 
                      'has_us_facility', 'allocation', 'intervention_model', 'primary_purpose', 'enrollment_type', 'description'], inplace=True)

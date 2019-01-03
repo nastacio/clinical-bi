@@ -56,6 +56,10 @@ services:
   tensorflow.ct:
     build:
       context: ../tensorflow.ct
+    volumes:
+      - type: bind
+        source: ../../src/main/py
+        target: /usr/local/clinical-bi-master/src/main/py
     image: tensorflow.ct:latest
     secrets:
       - aact_credentials
