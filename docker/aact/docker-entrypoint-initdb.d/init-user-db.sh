@@ -105,7 +105,20 @@ psql -d aact -c "insert into ctgov.temp_calculated_values
 )
 select
         s_join.nct_id as nct_id,
-        bool_or(ce.is_oncology) as is_oncology,
+        bool_or(ce.is_oncology) or
+            case when 
+            position('ancer' in s_join.brief_title) > 0 or
+            position('cinoma' in s_join.brief_title) > 0 or
+            position('eukem' in s_join.brief_title) > 0 or
+            position('phoma' in s_join.brief_title) > 0 or
+            position('umor' in s_join.brief_title) > 0 or 
+            position('umour' in s_join.brief_title) > 0 or 
+            position('eoplasm' in s_join.brief_title) > 0 or 
+            position('anoma' in s_join.brief_title) > 0 
+            then true 
+            else false
+            end 
+        as is_oncology,
         count(distinct c.downcase_name) as number_of_conditions,
         avg(ce.intervention_completion_ratio) as average_condition_completion_ratio
     from
@@ -116,7 +129,8 @@ select
         s_join.nct_id = c.nct_id and
         c.downcase_name = ce.downcase_name
     group by
-        s_join.nct_id"
+        s_join.nct_id,
+        s_join.brief_title"
 psql -d aact -c "create index studies_calculated_values_idx_nct_id 
 ON ctgov.temp_calculated_values (nct_id)"
 
