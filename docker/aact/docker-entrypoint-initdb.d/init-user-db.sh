@@ -38,7 +38,11 @@ psql -d aact -c "create table ctgov.conditions_calculated_values(
  completed_interventional_studies integer,
  terminated_interventional_studies integer,
  withdrawn_interventional_studies integer,
- intervention_completion_ratio real)"
+ intervention_completion_ratio real,
+ enrollment_avg real NULL,
+ first_seen_year_avg real NULL,
+ last_seen_year_avg real NULL,
+ research_span_years_avg real NULL)"
 
 psql -d aact -c "insert into ctgov.conditions_calculated_values (
     downcase_name, 
@@ -47,7 +51,11 @@ psql -d aact -c "insert into ctgov.conditions_calculated_values (
     completed_interventional_studies,
     terminated_interventional_studies,
     withdrawn_interventional_studies,
-    intervention_completion_ratio)
+    intervention_completion_ratio,
+    first_seen_year_avg,
+    last_seen_year_avg,
+    research_span_years_avg,
+    enrollment_avg)
 select
     c.downcase_name as downcase_name,
     case when 
@@ -70,13 +78,34 @@ select
             (count(distinct s_completed.nct_id) +  count(distinct s_terminated.nct_id) + count (distinct s_withdrawn.nct_id)) > 0 
          then (cast (count(distinct s_completed.nct_id) as real)/(count(distinct s_completed.nct_id) +  count(distinct s_terminated.nct_id) + count (distinct s_withdrawn.nct_id))) 
          else (0) 
-         end as intervention_completion_ratio
+         end as intervention_completion_ratio,
+    avg(cast(DATE_PART('year', s_done.start_date) as real)) as first_seen_year_avg,
+    avg(cast(DATE_PART('year', s_done.completion_date) as real)) as last_seen_year_avg,
+    avg(cast(DATE_PART('year', s_done.completion_date) as real) - 
+        cast(DATE_PART('year', s_done.start_date) as real)) as research_span_years_avg,
+    avg(s_done.enrollment) as enrollment_avg
 from ctgov.conditions as c
 inner join ctgov.studies as s on c.nct_id=s.nct_id
-left outer join ctgov.studies as s_total on c.nct_id=s_total.nct_id and s_total.study_type='Interventional'
-left outer join ctgov.studies as s_completed on c.nct_id=s_completed.nct_id and s_completed.overall_status='Completed' and s_completed.study_type='Interventional'
-left outer join ctgov.studies as s_terminated on c.nct_id=s_terminated.nct_id and s_terminated.overall_status='Terminated' and s_terminated.study_type='Interventional'
-left outer join ctgov.studies as s_withdrawn on c.nct_id=s_withdrawn.nct_id and s_withdrawn.overall_status='Withdrawn' and s_withdrawn.study_type='Interventional'
+left outer join ctgov.studies as s_total on 
+    c.nct_id=s_total.nct_id and 
+    s_total.study_type='Interventional'
+left outer join ctgov.studies as s_completed on 
+    c.nct_id=s_completed.nct_id and 
+    s_completed.overall_status='Completed' and 
+    s_completed.study_type='Interventional'
+left outer join ctgov.studies as s_terminated on 
+    c.nct_id=s_terminated.nct_id and 
+    s_terminated.overall_status='Terminated' and 
+    s_terminated.study_type='Interventional'
+left outer join ctgov.studies as s_withdrawn on 
+    c.nct_id=s_withdrawn.nct_id and 
+    s_withdrawn.overall_status='Withdrawn' and 
+    s_withdrawn.study_type='Interventional'
+left outer join ctgov.studies as s_done on 
+    c.nct_id=s_done.nct_id and 
+    s_done.overall_status in ('Completed', 'Terminated', 'Withdrawn') and 
+    s_done.study_type='Interventional' and
+    s_done.enrollment_type != 'Anticipated'
 group by 
     c.downcase_name"
 
@@ -87,21 +116,19 @@ ON ctgov.conditions_calculated_values (downcase_name)"
 #
 # Modifications to calculated_values table
 #
-psql -d aact -c "alter table ctgov.calculated_values add column is_oncology boolean"
-psql -d aact -c "alter table ctgov.calculated_values add column number_of_conditions integer"
-psql -d aact -c "alter table ctgov.calculated_values add column average_condition_completion_ratio real"
-
 psql -d aact -c "create table ctgov.temp_calculated_values (
  nct_id character varying NULL,
  is_oncology boolean,
  number_of_conditions integer,
- average_condition_completion_ratio real)"
+ average_condition_completion_ratio real,
+ primary_purpose character varying NULL)"
 
 psql -d aact -c "insert into ctgov.temp_calculated_values
 ( nct_id, 
   is_oncology, 
   number_of_conditions,
-  average_condition_completion_ratio
+  average_condition_completion_ratio,
+  primary_purpose
 )
 select
         s_join.nct_id as nct_id,
@@ -120,24 +147,33 @@ select
             end 
         as is_oncology,
         count(distinct c.downcase_name) as number_of_conditions,
-        avg(ce.intervention_completion_ratio) as average_condition_completion_ratio
+        avg(ce.intervention_completion_ratio) as average_condition_completion_ratio,
+        d.primary_purpose as primary_purpose
     from
-        ctgov.studies as s_join,
-        ctgov.conditions as c, 
-        ctgov.conditions_calculated_values as ce
-    where 
-        s_join.nct_id = c.nct_id and
-        c.downcase_name = ce.downcase_name
+        ctgov.studies as s_join
+    left outer join ctgov.designs as d 
+        on s_join.nct_id = d.nct_id
+    left outer join ctgov.conditions as c 
+        on c.nct_id = s_join.nct_id
+    left outer join ctgov.conditions_calculated_values as ce 
+        on c.downcase_name = ce.downcase_name
     group by
         s_join.nct_id,
-        s_join.brief_title"
+        s_join.brief_title,
+        d.primary_purpose"
 psql -d aact -c "create index studies_calculated_values_idx_nct_id 
 ON ctgov.temp_calculated_values (nct_id)"
+
+psql -d aact -c "alter table ctgov.calculated_values add column is_oncology boolean"
+psql -d aact -c "alter table ctgov.calculated_values add column number_of_conditions integer"
+psql -d aact -c "alter table ctgov.calculated_values add column average_condition_completion_ratio real"
+psql -d aact -c "alter table ctgov.calculated_values add column primary_purpose character varying NULL"
 
 psql -d aact -c "update ctgov.calculated_values
 set is_oncology = new_studies_values.is_oncology, 
     number_of_conditions = new_studies_values.number_of_conditions,
-    average_condition_completion_ratio = new_studies_values.average_condition_completion_ratio
+    average_condition_completion_ratio = new_studies_values.average_condition_completion_ratio,
+    primary_purpose = new_studies_values.primary_purpose
 from
     ctgov.temp_calculated_values as new_studies_values
 where
