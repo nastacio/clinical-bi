@@ -79,10 +79,10 @@ select
          then (cast (count(distinct s_completed.nct_id) as real)/(count(distinct s_completed.nct_id) +  count(distinct s_terminated.nct_id) + count (distinct s_withdrawn.nct_id))) 
          else (0) 
          end as intervention_completion_ratio,
-    avg(cast(DATE_PART('year', s_done.start_date) as real)) as first_seen_year_avg,
-    avg(cast(DATE_PART('year', s_done.completion_date) as real)) as last_seen_year_avg,
-    avg(cast(DATE_PART('year', s_done.completion_date) as real) - 
-        cast(DATE_PART('year', s_done.start_date) as real)) as research_span_years_avg,
+    avg(cast(DATE_PART('year', s_all.study_first_submitted_date) as real)) as first_seen_year_avg,
+    avg(cast(DATE_PART('year', s_all.study_first_submitted_date) as real)) as last_seen_year_avg,
+    avg(cast(DATE_PART('year', s_all.study_first_submitted_date) as real) - 
+        cast(DATE_PART('year', s_all.study_first_submitted_date) as real)) as research_span_years_avg,
     avg(s_done.enrollment) as enrollment_avg
 from ctgov.conditions as c
 inner join ctgov.studies as s on c.nct_id=s.nct_id
@@ -106,6 +106,8 @@ left outer join ctgov.studies as s_done on
     s_done.overall_status in ('Completed', 'Terminated', 'Withdrawn') and 
     s_done.study_type='Interventional' and
     s_done.enrollment_type != 'Anticipated'
+join ctgov.studies as s_all on 
+    c.nct_id=s_all.nct_id 
 group by 
     c.downcase_name"
 
