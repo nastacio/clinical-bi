@@ -1,6 +1,6 @@
 #!/bin/sh
 ############################################################################# {COPYRIGHT-TOP} ####
-#  Copyright 2018 Denilson Nastacio
+#  Copyright 2018,2019 Denilson Nastacio
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -109,6 +109,18 @@ EOF
 echo "INFO: Creating DB2 Warehouse table." 
 
 create_table_sql="${GE_HOME_OUTPUT}"/aact.table.sql
+drop_table_sql="${GE_HOME_OUTPUT}"/aact.drop.table.sql
+
+cat > "${drop_table_sql}" << EOF
+DROP TABLE ${ctgov_table};
+EOF
+
+set -e
+echo
+echo "INFO: Deleting table from previous run, if any"
+db2cli execsql -dsn ${db2alias} -user ${db2username} -passwd ${db2password} -inputsql "${drop_table_sql}" > /dev/null 2>&1 
+set +e
+
 cat > "${create_table_sql}" << EOF
 CREATE TABLE ${ctgov_table} (
 NCT_ID VARCHAR(16),
@@ -141,7 +153,7 @@ rm "${tmpsql}"
 
 load_messages="${GE_HOME}/load.log"
 rm -f "${load_messages}"
-echo "Loading messages into DB2 warehouse at ${db2host}. Logs being written at [${load_messages}]"
+echo "INFO: Loading messages into DB2 warehouse at ${db2host}. Logs being written at [${load_messages}]"
 
 sed -i "s/\"/\'/g" "${ctgov_dump}"
 sed -i "s/ | / - /g" "${ctgov_dump}"
