@@ -30,7 +30,7 @@ services:
       - 5432:5432
     environment:
       POSTGRES_DB: aact
-      POSTGRES_USER: aact_user
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: aact_password
       READONLY_USER: readonly
       READONLY_PASSWORD: readonly

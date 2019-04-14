@@ -1,5 +1,5 @@
 ############################################################################# {COPYRIGHT-TOP} ####
-#  Copyright 2018 Denilson Nastacio
+#  Copyright 2018,2019 Denilson Nastacio
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 ############################################################################# {COPYRIGHT-END} ####
 
 # https://hub.docker.com/_/postgres/
-FROM postgres:9.6.6
+FROM postgres
 
 ARG aact_version=${aact_version:-20181101}
 ARG aact_filename=${aact_version}_clinical_trials.zip
@@ -32,12 +32,8 @@ RUN \
   unzip /tmp/${aact_filename} -d "${AACT_DUMP_DIR}" && \
   rm /tmp/${aact_filename} && \
   chown -R postgres "${AACT_DUMP_DIR}" && \
-  apt-get remove curl -y && \
-  apt-get remove unzip -y && \
   echo "Applying image security patches" && \
-  apt-get install --only-upgrade exim4 -y && \
-  apt-get install --only-upgrade libxml2 -y && \
-  apt-get install --only-upgrade sensible-utils -y && \
+  apt-get install --only-upgrade exim4 libxml2 sensible-utils -y && \
   touch /var/log/faillog
 
 COPY docker-entrypoint-initdb.d/* /docker-entrypoint-initdb.d

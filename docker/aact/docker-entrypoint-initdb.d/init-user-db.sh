@@ -17,11 +17,12 @@
 
 #!/bin/bash
 set -e
+set +x
 
 # Removed --clean --create from the AACT instructions since the Docker postgres
 # startup will already have created the database
 aactDump="${AACT_DUMP_DIR}/postgres_data.dmp"
-pg_restore -e -v -O -x --dbname=aact --no-owner "${aactDump}"
+pg_restore -e -v -O -x --dbname=aact --no-owner --clean --create "${aactDump}"
 rm "${aactDump}"
 
 # https://stackoverflow.com/questions/2875610/permanently-set-postgresql-schema-path
@@ -40,9 +41,8 @@ psql -d aact -c "create table ctgov.conditions_calculated_values(
  withdrawn_interventional_studies integer,
  intervention_completion_ratio real,
  enrollment_avg real NULL,
- first_seen_year_avg real NULL,
- last_seen_year_avg real NULL,
- research_span_years_avg real NULL)"
+ first_seen_date date NULL
+)"
 
 psql -d aact -c "insert into ctgov.conditions_calculated_values (
     downcase_name, 
@@ -52,10 +52,8 @@ psql -d aact -c "insert into ctgov.conditions_calculated_values (
     terminated_interventional_studies,
     withdrawn_interventional_studies,
     intervention_completion_ratio,
-    first_seen_year_avg,
-    last_seen_year_avg,
-    research_span_years_avg,
-    enrollment_avg)
+    enrollment_avg,
+    first_seen_date)
 select
     c.downcase_name as downcase_name,
     case when 
@@ -66,7 +64,7 @@ select
             position('umor' in c.downcase_name) > 0 or 
             position('umour' in c.downcase_name) > 0 or 
             position('eoplasm' in c.downcase_name) > 0 or 
-            position('anoma' in c.downcase_name) > 0 
+            position('lanoma' in c.downcase_name) > 0 
          then true 
          else false
          end as is_oncology,
@@ -79,11 +77,8 @@ select
          then (cast (count(distinct s_completed.nct_id) as real)/(count(distinct s_completed.nct_id) +  count(distinct s_terminated.nct_id) + count (distinct s_withdrawn.nct_id))) 
          else (0) 
          end as intervention_completion_ratio,
-    avg(cast(DATE_PART('year', s_all.study_first_submitted_date) as real)) as first_seen_year_avg,
-    avg(cast(DATE_PART('year', s_all.study_first_submitted_date) as real)) as last_seen_year_avg,
-    avg(cast(DATE_PART('year', s_all.study_first_submitted_date) as real) - 
-        cast(DATE_PART('year', s_all.study_first_submitted_date) as real)) as research_span_years_avg,
-    avg(s_done.enrollment) as enrollment_avg
+    avg(s_done.enrollment) as enrollment_avg,
+    min(s_all.study_first_submitted_date) as first_seen_date
 from ctgov.conditions as c
 inner join ctgov.studies as s on c.nct_id=s.nct_id
 left outer join ctgov.studies as s_total on 
@@ -143,7 +138,7 @@ select
             position('umor' in s_join.brief_title) > 0 or 
             position('umour' in s_join.brief_title) > 0 or 
             position('eoplasm' in s_join.brief_title) > 0 or 
-            position('anoma' in s_join.brief_title) > 0 
+            position('lanoma' in s_join.brief_title) > 0 
             then true 
             else false
             end 
@@ -182,6 +177,83 @@ where
     ctgov.calculated_values.nct_id = new_studies_values.nct_id"
     
 psql -d aact -c "drop table ctgov.temp_calculated_values"
+
+
+#
+# interventions_calculated_values
+#
+psql -d aact -c "alter table ctgov.interventions add column downcase_name character varying NULL"
+psql -d aact -c "update ctgov.interventions
+set downcase_name = lower(name)"
+
+psql -d aact -c "create table ctgov.interventions_calculated_values(
+ intervention_name character varying NOT NULL,
+ studies int,
+ first_seen_date date NOT NULL,
+ last_seen_date date NOT NULL,
+ PRIMARY KEY (intervention_name)
+)"
+
+psql -d aact -c "insert into ctgov.interventions_calculated_values (
+ intervention_name,
+ studies,
+ first_seen_date,
+ last_seen_date
+)
+select 
+    lower(i.name) as intervention_name,
+    count(distinct i.nct_id) as studies,
+    min(s.study_first_submitted_date) as first_seen_date,
+    max(s.study_first_submitted_date) as last_seen_date
+from 
+    interventions as i,
+    studies as s
+where
+    s.nct_id = i.nct_id
+group by
+    lower(i.name)"
+
+psql -d aact -c "create index interventions_calculated_values_idx_intervention_name 
+ON ctgov.interventions_calculated_values (intervention_name)"
+
+psql -d aact -c "create table ctgov.interventions_conditions (
+ intervention_name character varying NOT NULL,
+ condition_name character varying NOT NULL,
+ studies int,
+ first_seen_date date NOT NULL,
+ last_seen_date date NOT NULL,
+ PRIMARY KEY (intervention_name, condition_name)
+)"
+
+psql -d aact -c "insert into ctgov.interventions_conditions (
+ intervention_name,
+ condition_name,
+ studies,
+ first_seen_date,
+ last_seen_date
+)
+select 
+    i.downcase_name as intervention_name,
+    c.downcase_name as condition_name, 
+    count(s.nct_id) as studies,
+    min(s.study_first_submitted_date) as first_seen_date,
+    max(s.study_first_submitted_date) as last_seen_date
+from 
+    interventions as i,
+    conditions as c,
+    studies as s
+where
+    s.nct_id = i.nct_id and
+    s.nct_id = c.nct_id
+group by
+    i.downcase_name,
+    c.downcase_name" 
+
+psql -d aact -c "create index interventions_conditions_intervention_name_idx_type_name 
+ON ctgov.interventions_conditions (intervention_name)"
+psql -d aact -c "create index interventions_conditions_condition_name_idx_type_name 
+ON ctgov.interventions_conditions (condition_name)"
+
 
 # 
 # Granting proper permissions to READONLY_USER across the whole schema
