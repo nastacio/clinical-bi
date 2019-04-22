@@ -64,7 +64,14 @@ select
             position('umor' in c.downcase_name) > 0 or 
             position('umour' in c.downcase_name) > 0 or 
             position('eoplasm' in c.downcase_name) > 0 or 
-            position('lanoma' in c.downcase_name) > 0 
+            position('lanoma' in c.downcase_name) > 0 or 
+            position('yeloma' in c.downcase_name) > 0 or 
+            position('lioma' in c.downcase_name) > 0 or 
+            position('toma' in c.downcase_name) > 0 or 
+            position('myelodysplas' in c.downcase_name) > 0 or 
+            position('estrogen receptor' in c.downcase_name) > 0 or 
+            position('sterone receptor' in c.downcase_name) > 0 or 
+            position('neu negative' in c.downcase_name) > 0
          then true 
          else false
          end as is_oncology,
@@ -138,7 +145,14 @@ select
             position('umor' in s_join.brief_title) > 0 or 
             position('umour' in s_join.brief_title) > 0 or 
             position('eoplasm' in s_join.brief_title) > 0 or 
-            position('lanoma' in s_join.brief_title) > 0 
+            position('lanoma' in s_join.brief_title) > 0 or 
+            position('toma' in s_join.brief_title) > 0 or 
+            position('lioma' in s_join.brief_title) > 0 or 
+            position('yeloma' in s_join.brief_title) > 0 or 
+            position('myelodysplas' in s_join.brief_title) > 0 or 
+            position('estrogen receptor' in s_join.brief_title) > 0 or 
+            position('sterone receptor' in s_join.brief_title) > 0 or 
+            position('neu negative' in s_join.brief_title) > 0
             then true 
             else false
             end 
