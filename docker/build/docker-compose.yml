@@ -23,7 +23,7 @@ services:
     build:
       context: ../aact
       args:
-        aact_version: 20190401
+        aact_version: 20190601
     image: aact:latest
     restart: always
     ports:
