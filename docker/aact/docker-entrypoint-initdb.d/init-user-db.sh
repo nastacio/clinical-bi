@@ -17,13 +17,16 @@
 
 #!/bin/bash
 set -e
-set +x
+set -x
 
 # Removed --clean --create from the AACT instructions since the Docker postgres
 # startup will already have created the database
 aactDump="${AACT_DUMP_DIR}/postgres_data.dmp"
-pg_restore -e -v -O -x --dbname=aact --no-owner --clean --create "${aactDump}"
+pg_restore -e -v -O -x --dbname=aact --no-owner --create "${aactDump}"
 rm "${aactDump}"
+
+psql -c "DROP DATABASE aact"
+psql -c "ALTER DATABASE aact_back RENAME TO aact"
 
 # https://stackoverflow.com/questions/2875610/permanently-set-postgresql-schema-path
 psql -d aact -c "alter database aact SET search_path TO ctgov"
@@ -278,3 +281,5 @@ psql -d aact -c "grant CONNECT on database aact to ${READONLY_USER}"
 
 psql -d aact -c "grant select on all tables in schema ctgov to ${READONLY_USER}"
 psql -d aact -c "grant usage on schema ctgov to ${READONLY_USER}" 
+
+psql -d aact -c "alter role ${READONLY_USER} in database aact set search_path = ctgov, public"
