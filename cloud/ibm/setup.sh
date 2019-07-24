@@ -149,7 +149,7 @@ then
     usage
     exit 2
 fi
-if [ "${free_cluster}"  -eq 0 ]
+if [ ${free_cluster} -eq 0 ]
 then
     if [ "${sl_key}" == "" ] || [ "${sl_user}" == "" ]
     then 
@@ -157,7 +157,7 @@ then
         echo "Refer to https://console.bluemix.net/docs/containers/cs_cli_reference.html#cs_credentials_set."
         usage
         exit 3
-fi
+    fi
 fi
 
 echo $line
