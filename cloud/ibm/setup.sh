@@ -230,7 +230,7 @@ then
 
     bx cr image-inspect "${image_name}" > /dev/null 2>&1 ||
         (echo "Building image (this make take a few minutes)"
-         bx cr build -q --tag ${image_name} "${aact_dir}")
+         bx cr build --tag ${image_name} "${aact_dir}")
 
     echo
 else
