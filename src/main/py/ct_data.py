@@ -46,9 +46,9 @@ def train_validate_test_split(df, train_percent=.6, validate_percent=.2, seed=No
     m = len(df.index)
     train_end = int(train_percent * m)
     validate_end = int(validate_percent * m) + train_end
-    train = df.ix[perm[:train_end]]
-    validate = df.ix[perm[train_end:validate_end]]
-    test = df.ix[perm[validate_end:]]
+    train = df.loc[perm[:train_end]]
+    validate = df.loc[perm[train_end:validate_end]]
+    test = df.loc[perm[validate_end:]]
     return train, validate, test
 
 

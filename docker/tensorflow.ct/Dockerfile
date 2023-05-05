@@ -26,4 +26,8 @@ RUN \
     pip install --upgrade pip && \
     pip install psycopg2-binary tensorflow pandas configparser
 
+# Workaround for https://github.com/pyinvoke/invoke/issues/833
+RUN \
+    pip install invoke
+
 ENTRYPOINT /usr/local/bin/python /usr/local/clinical-bi-master/src/main/py/ct_estimator.py --database_properties /run/secrets/aact_credentials

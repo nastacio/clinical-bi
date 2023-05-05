@@ -1,5 +1,6 @@
+#!/bin/bash
 ############################################################################# {COPYRIGHT-TOP} ####
-#  Copyright 2018,2019 
+#  Copyright 2018,2023
 #  Denilson Nastacio
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +16,15 @@
 #  limitations under the License.
 ############################################################################# {COPYRIGHT-END} ####
 
-#!/bin/bash
 set -e
 set -x
 
+# Instructions based on:
+# https://aact.ctti-clinicaltrials.org/snapshots
+
 # Removed --clean --create from the AACT instructions since the Docker postgres
 # startup will already have created the database
-aactDump="${AACT_DUMP_DIR}/postgres_data.dmp"
+aactDump="${AACT_DUMP_DIR}/postgres.dmp"
 pg_restore -e -v -O -x --dbname=aact --no-owner "${aactDump}"
 rm "${aactDump}"
 
@@ -223,6 +226,7 @@ from
     interventions as i,
     studies as s
 where
+    i.name is NOT NULL and
     s.nct_id = i.nct_id
 group by
     lower(i.name)"
@@ -257,11 +261,12 @@ from
     conditions as c,
     studies as s
 where
+    i.downcase_name is NOT NULL and
     s.nct_id = i.nct_id and
     s.nct_id = c.nct_id
 group by
     i.downcase_name,
-    c.downcase_name" 
+    c.downcase_name"
 
 psql -d aact -c "create index interventions_conditions_intervention_name_idx_type_name 
 ON ctgov.interventions_conditions (intervention_name)"

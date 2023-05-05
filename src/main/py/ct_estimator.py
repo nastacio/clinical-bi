@@ -17,9 +17,17 @@ from __future__ import print_function
 
 import argparse
 import tensorflow as tf
+import logging
 
 import ct_data
 
+# https://github.com/pyinvoke/invoke/issues/833#issuecomment-1293148106
+import inspect
+
+if not hasattr(inspect, 'getargspec'):
+    inspect.getargspec = inspect.getfullargspec
+
+from invoke import task
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', default=100, type=int, help='batch size')
@@ -109,7 +117,7 @@ def main(argv):
     classifier = tf.estimator.DNNClassifier(
         feature_columns=my_feature_columns,
         hidden_units=[60,60],
-        n_classes=2)
+        n_classes=2, loss_reduction=tf.keras.losses.Reduction.SUM)
 
     # Train the Model.
     classifier.train(
@@ -144,5 +152,5 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    tf.logging.set_verbosity(tf.logging.INFO)
-    tf.app.run(main)
+    tf.get_logger().setLevel(logging.INFO)
+    tf.compat.v1.app.run(main)

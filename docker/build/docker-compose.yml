@@ -23,7 +23,7 @@ services:
     build:
       context: ../aact
       args:
-        aact_version: 20200501
+        aact_version: 20230430
     image: aact:latest
     restart: always
     ports:
@@ -36,16 +36,16 @@ services:
       READONLY_PASSWORD: readonly
 
   # https://www.ibm.com/support/knowledgecenter/SS6NHC/com.ibm.swg.im.dashdb.doc/admin/deploying_client_container.html
-  db2wh:
-    build:
-      context: ../db2wh
-    volumes:
-      - db2wh_profile:/mnt/clientdir:rw
-    stdin_open: true
-    tty: true
-    secrets:
-      - db2wh_credentials
-      - aact_credentials
+  # db2wh:
+  #   build:
+  #     context: ../db2wh
+  #   volumes:
+  #     - db2wh_profile:/mnt/clientdir:rw
+  #   stdin_open: true
+  #   tty: true
+  #   secrets:
+  #     - db2wh_credentials
+  #     - aact_credentials
 
   adminer:
     image: adminer
@@ -58,17 +58,23 @@ services:
       context: ../tensorflow.ct
     volumes:
       - type: bind
-        source: ../../src/main/py
+        source: ${HOME}/github.com/clinical-bi/src/main/py
         target: /usr/local/clinical-bi-master/src/main/py
     image: tensorflow.ct:latest
     secrets:
       - aact_credentials
 
+  tensorflow.jupyter:
+    image: tensorflow/tensorflow:latest-jupyter
+    restart: always
+    ports:
+      - 8888:8888
+
 secrets:
   aact_credentials:
-    file: ~/etc/aact.properties
+    file: ${HOME}/etc/aact.properties
   db2wh_credentials:
-    file: ~/etc/db2wh.aact.credentials.json
+    file: ${HOME}/etc/db2wh.aact.credentials.json
 
 volumes:
   db2wh_profile: {}
