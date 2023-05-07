@@ -113,10 +113,10 @@ def main(argv):
 #                 dimension=10)
 #             my_feature_columns.append(embedding_column)
 
-    # Build 2 hidden layer DNN with 10, 10 units respectively.
+    # Build 3 hidden layer DNN with 10, 10 units respectively.
     classifier = tf.estimator.DNNClassifier(
         feature_columns=my_feature_columns,
-        hidden_units=[60,60],
+        hidden_units=[8,8,8,8,8],
         n_classes=2, loss_reduction=tf.keras.losses.Reduction.SUM)
 
     # Train the Model.
@@ -140,15 +140,24 @@ def main(argv):
         input_fn=lambda:ct_data.eval_input_fn(predict_x,
                                                 labels=None,
                                                 batch_size=args.batch_size))
+    
+    correct=0
+    total=0
     for pred_dict, expec, nct_id in zip(predictions, expected, expected.index):
         template = ('\nPrediction for {} is "{}" ({:.1f}%), expected "{}"')
 
         class_id = pred_dict['class_ids'][0]
         probability = pred_dict['probabilities'][class_id]
 
+        total += 1
+        if ct_data.STATUS[class_id] == ct_data.STATUS[expec]:
+            correct += 1
+
         print(template.format(nct_id,
                               ct_data.STATUS[class_id],
                               100 * probability, ct_data.STATUS[expec]))
+        
+    print(f"Correct predictions {correct}/{total} = {(100*correct/total):0.1f}%")
 
 
 if __name__ == '__main__':

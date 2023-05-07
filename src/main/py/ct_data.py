@@ -1,4 +1,4 @@
-#  Copyright 2018 Denilson Nastacio All Rights Reserved.
+#  Copyright 2018,2023 Denilson Nastacio All Rights Reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ import tensorflow as tf
 import psycopg2
 import configparser as cf
 import numpy as np
+import key_driver_analysis as kda
 
 SQL_COLUMN_NAMES = ['nct_id',
                     'start_date',
@@ -51,6 +52,16 @@ def train_validate_test_split(df, train_percent=.6, validate_percent=.2, seed=No
     test = df.loc[perm[validate_end:]]
     return train, validate, test
 
+def kda_metadata(df):
+    target = 'status'
+    features=list(set(df.columns.tolist()).difference(set([target])))
+    print(f'target --> {target}')
+    print(f'features --> {features}')
+    rw_df = kda.relative_importance(df,
+                                    target=target,
+                                    features=features,
+                                    verbose=True)
+    return rw_df
 
 def load_data(y_name='status', db_props='aact.properties'):
     """Returns the CT dataset as (train_x, train_y), (test_x, test_y), , (validate_x, validate_y)."""
@@ -70,7 +81,7 @@ def load_data(y_name='status', db_props='aact.properties'):
     "    sponsors as sp, sponsors as sp2, design_group_interventions as dgi, designs as d, brief_summaries as bs " + \
     "WHERE s.nct_id=cv.nct_id AND s.nct_id=sp.nct_id AND s.nct_id=i.nct_id AND s.nct_id=sp2.nct_id AND s.nct_id=e.nct_id " + \
     "AND s.nct_id=dgi.nct_id AND s.nct_id=d.nct_id AND s.nct_id=bs.nct_id " + \
-    "AND s.start_date > '2009-01-01' " + \
+    "AND s.start_date > '2019-01-01' " + \
     "AND cv.is_oncology = true " + \
     "AND s.overall_status in ('Completed', 'Terminated') " + \
     "AND s.enrollment IS NOT NULL AND cv.number_of_facilities > 0  " + \
@@ -136,16 +147,23 @@ def load_data(y_name='status', db_props='aact.properties'):
     
     df.to_csv('/tmp/ct.csv')
 
-    df.drop(columns=['start_date','overall_status','sponsor_type', 'gender', 'phase', 'study_type', 
+    df.drop(columns=['start_date','overall_status','average_condition_completion_ratio','sponsor_type', 'gender', 'phase', 'study_type', 
                      'has_us_facility', 'allocation', 'intervention_model', 'primary_purpose', 'enrollment_type', 'description'], inplace=True)
     train, validate, test = train_validate_test_split(df, 0.7, 0.005)
+
+    print("Rows", len(df))
+
+    print("************")
+    rw_df = kda_metadata(df)
+    print(rw_df)
+    print("************")
 
     train_x, train_y = train, train.pop(y_name)
     test_x, test_y = test, test.pop(y_name)
     validate_x, validate_y = validate, validate.pop(y_name)
 
     return (train_x, train_y), (test_x, test_y), (validate_x, validate_y)
-    
+
 
 def train_input_fn(features, labels, batch_size):
     """An input function for training"""
