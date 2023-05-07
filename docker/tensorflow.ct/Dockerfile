@@ -24,7 +24,7 @@ RUN \
     rm /tmp/clinical-bi.zip && \
     apt-get remove unzip -y && \
     pip install --upgrade pip && \
-    pip install psycopg2-binary tensorflow pandas configparser
+    pip install key_driver_analysis psycopg2-binary tensorflow pandas configparser
 
 # Workaround for https://github.com/pyinvoke/invoke/issues/833
 RUN \
